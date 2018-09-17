@@ -29,6 +29,8 @@ module hardware (
     output pin_1,
     input pin_2,
 
+    output pin_3,
+
     // onboard LED
     output user_led,
 
@@ -77,6 +79,10 @@ module hardware (
     );
 
     
+    reg led_write = 0;
+    reg [7:0] led_num = 0;
+    reg [23:0] led_rgb_data = 0;
+    ws2812 #(.NUM_LEDS(8)) ws2812_inst(.data(pin_3), .clk(clk), .reset(!resetn), .rgb_data(led_rgb_data), .led_num(led_num), .write(led_write));
   
     ///////////////////////////////////
     // Peripheral Bus
@@ -96,6 +102,7 @@ module hardware (
             gpio <= 0;
         end else begin
             iomem_ready <= 0;
+            led_write <= 0;
 
             ///////////////////////////
             // GPIO Peripheral
@@ -111,12 +118,17 @@ module hardware (
 
             
             ///////////////////////////
-            // Template Peripheral
+            // WS2812 Peripheral
             ///////////////////////////
-            if (iomem_valid && !iomem_ready && iomem_addr[31:24] == 8'h04) begin
-                iomem_ready <= 1;
-                iomem_rdata <= 32'h0;
-            end
+			else if (iomem_valid && !iomem_ready && iomem_addr[31:24] == 8'h04) begin
+				iomem_ready <= 1;
+                led_write <= 1;
+				iomem_rdata <= 0;
+				if (iomem_wstrb[0]) led_num             <= iomem_wdata[ 7: 0];
+				if (iomem_wstrb[1]) led_rgb_data[ 7: 0] <= iomem_wdata[15: 8];
+				if (iomem_wstrb[2]) led_rgb_data[15: 8] <= iomem_wdata[23:16];
+				if (iomem_wstrb[3]) led_rgb_data[23:16] <= iomem_wdata[31:24];
+			end
         end
     end
 
