@@ -2,6 +2,9 @@
 #include <stdbool.h>
 #include "animate.h"
 
+//#define BREAK1
+//#define BREAK2
+
 // a pointer to this is a null pointer, but the compiler does not
 // know that because "sram" is a linker symbol from sections.lds.
 extern uint32_t sram;
@@ -136,7 +139,7 @@ char getchar()
 }
 
 
-#ifndef BREAK1
+#ifndef BREAK2
 uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
 {
 	uint8_t data[256];
@@ -209,7 +212,7 @@ void main()
 	print("Booting..\n");
     
     
-    #ifndef BREAK2
+    #ifndef BREAK1
     // animation fails as globals are not initialised
     init_rainbow();
     #endif
