@@ -2,7 +2,7 @@
 upload: hardware.bin firmware.bin
 	tinyprog -p hardware.bin -u firmware.bin
 
-hx8ksim: hx8kdemo_tb.vvp firmware.hex
+sim: hx8kdemo_tb.vvp firmware.hex
 	vvp -N $<
 	gtkwave testbench.vcd soc.gtkw
 
