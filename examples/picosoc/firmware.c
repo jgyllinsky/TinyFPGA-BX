@@ -21,9 +21,6 @@ uint32_t set_irq_mask(uint32_t mask); asm (
 );
 
 bool animate = false;
-uint8_t red = 0;
-uint8_t grn = 0;
-uint8_t blu = 0;
 
 
 /*
@@ -138,118 +135,8 @@ char getchar()
 	return getchar_prompt(0);
 }
 
-// --------------------------------------------------------
 
-/*
-void cmd_read_flash_id()
-{
-	uint8_t buffer[17] = { 0x9F,  };
-	flashio(buffer, 17, 0);
-
-	for (int i = 1; i <= 16; i++) {
-		putchar(' ');
-		print_hex(buffer[i], 2);
-	}
-	putchar('\n');
-}
-*/
-
-// --------------------------------------------------------
-
-#ifdef HX8KDEMO
-uint8_t cmd_read_flash_regs_print(uint32_t addr, const char *name)
-{
-	set_flash_latency(9);
-
-	uint8_t buffer[6] = {0x65, addr >> 16, addr >> 8, addr, 0, 0};
-	flashio(buffer, 6, 0);
-
-	print("0x");
-	print_hex(addr, 6);
-	print(" ");
-	print(name);
-	print(" 0x");
-	print_hex(buffer[5], 2);
-	print("\n");
-
-	return buffer[5];
-}
-
-void cmd_read_flash_regs()
-{
-	print("\n");
-	uint8_t sr1v = cmd_read_flash_regs_print(0x800000, "SR1V");
-	uint8_t sr2v = cmd_read_flash_regs_print(0x800001, "SR2V");
-	uint8_t cr1v = cmd_read_flash_regs_print(0x800002, "CR1V");
-	uint8_t cr2v = cmd_read_flash_regs_print(0x800003, "CR2V");
-	uint8_t cr3v = cmd_read_flash_regs_print(0x800004, "CR3V");
-	uint8_t vdlp = cmd_read_flash_regs_print(0x800005, "VDLP");
-}
-#endif
-
-#ifdef ICEBREAKER
-uint8_t cmd_read_flash_reg(uint8_t cmd)
-{
-	uint8_t buffer[2] = {cmd, 0};
-	flashio(buffer, 2, 0);
-	return buffer[1];
-}
-
-void print_reg_bit(int val, const char *name)
-{
-	for (int i = 0; i < 12; i++) {
-		if (*name == 0)
-			putchar(' ');
-		else
-			putchar(*(name++));
-	}
-
-	putchar(val ? '1' : '0');
-	putchar('\n');
-}
-
-void cmd_read_flash_regs()
-{
-	putchar('\n');
-
-	uint8_t sr1 = cmd_read_flash_reg(0x05);
-	uint8_t sr2 = cmd_read_flash_reg(0x35);
-	uint8_t sr3 = cmd_read_flash_reg(0x15);
-
-	print_reg_bit(sr1 & 0x01, "S0  (BUSY)");
-	print_reg_bit(sr1 & 0x02, "S1  (WEL)");
-	print_reg_bit(sr1 & 0x04, "S2  (BP0)");
-	print_reg_bit(sr1 & 0x08, "S3  (BP1)");
-	print_reg_bit(sr1 & 0x10, "S4  (BP2)");
-	print_reg_bit(sr1 & 0x20, "S5  (TB)");
-	print_reg_bit(sr1 & 0x40, "S6  (SEC)");
-	print_reg_bit(sr1 & 0x80, "S7  (SRP)");
-	putchar('\n');
-
-	print_reg_bit(sr2 & 0x01, "S8  (SRL)");
-	print_reg_bit(sr2 & 0x02, "S9  (QE)");
-	print_reg_bit(sr2 & 0x04, "S10 ----");
-	print_reg_bit(sr2 & 0x08, "S11 (LB1)");
-	print_reg_bit(sr2 & 0x10, "S12 (LB2)");
-	print_reg_bit(sr2 & 0x20, "S13 (LB3)");
-	print_reg_bit(sr2 & 0x40, "S14 (CMP)");
-	print_reg_bit(sr2 & 0x80, "S15 (SUS)");
-	putchar('\n');
-
-	print_reg_bit(sr3 & 0x01, "S16 ----");
-	print_reg_bit(sr3 & 0x02, "S17 ----");
-	print_reg_bit(sr3 & 0x04, "S18 (WPS)");
-	print_reg_bit(sr3 & 0x08, "S19 ----");
-	print_reg_bit(sr3 & 0x10, "S20 ----");
-	print_reg_bit(sr3 & 0x20, "S21 (DRV0)");
-	print_reg_bit(sr3 & 0x40, "S22 (DRV1)");
-	print_reg_bit(sr3 & 0x80, "S23 (HOLD)");
-	putchar('\n');
-}
-#endif
-
-// --------------------------------------------------------
-
+#ifndef BREAK1
 uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
 {
 	uint8_t data[256];
@@ -307,155 +194,7 @@ uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
 
 	return cycles_end - cycles_begin;
 }
-
-// --------------------------------------------------------
-
-#ifdef HX8KDEMO
-void cmd_benchmark_all()
-{
-	uint32_t instns = 0;
-
-	print("default        ");
-	reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00000000;
-	print(": ");
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("dspi-");
-		print_dec(i);
-		print("         ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00400000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("dspi-crm-");
-		print_dec(i);
-		print("     ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00500000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-");
-		print_dec(i);
-		print("         ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00200000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-crm-");
-		print_dec(i);
-		print("     ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00300000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-ddr-");
-		print_dec(i);
-		print("     ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00600000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-ddr-crm-");
-		print_dec(i);
-		print(" ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00700000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	print("instns         : ");
-	print_hex(instns, 8);
-	putchar('\n');
-}
 #endif
-
-#ifdef ICEBREAKER
-void cmd_benchmark_all()
-{
-	uint32_t instns = 0;
-
-	print("default   ");
-	set_flash_mode_spi();
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-	print("dual      ");
-	set_flash_mode_dual();
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-	// print("dual-crm  ");
-	// enable_flash_crm();
-	// print_hex(cmd_benchmark(false, &instns), 8);
-	// putchar('\n');
-
-	print("quad      ");
-	set_flash_mode_quad();
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-	print("quad-crm  ");
-	enable_flash_crm();
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-	print("qddr      ");
-	set_flash_mode_qddr();
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-	print("qddr-crm  ");
-	enable_flash_crm();
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-}
-#endif
-
-// --------------------------------------------------------
-
 
 
 void main()
@@ -470,8 +209,10 @@ void main()
 	print("Booting..\n");
     
     
+    #ifndef BREAK2
     // animation fails as globals are not initialised
     init_rainbow();
+    #endif
 
     LEDRainbowWaveEffect();
     
@@ -482,12 +223,6 @@ void main()
 	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
     reg_leds = 0;
 
-    /*
-    uint8_t * red;
-    uint8_t * grn;
-    red = &reg_leds + 0xFF;
-    grn = &reg_leds + 0xFFFF;
-    */
 
 	print("\n");
 	print("  ____  _          ____         ____\n");
