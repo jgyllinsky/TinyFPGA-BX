@@ -468,10 +468,12 @@ void main()
 	reg_leds = 31;
 	reg_uart_clkdiv = 139;
 	print("Booting..\n");
-   // init_rainbow();
+    
+    
+    // animation fails as globals are not initialised
+    init_rainbow();
+
     LEDRainbowWaveEffect();
-    //            set_ws2812(color,0);
-     //           set_ws2812(color,1);
     
 	reg_leds = 63;
 	//set_flash_qspi_flag();
