@@ -1,9 +1,5 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "animate.h"
-
-//#define BREAK1
-//#define BREAK2
 
 // a pointer to this is a null pointer, but the compiler does not
 // know that because "sram" is a linker symbol from sections.lds.
@@ -23,30 +19,6 @@ uint32_t set_irq_mask(uint32_t mask); asm (
     "ret\n"
 );
 
-bool animate = false;
-
-
-/*
-void main() {
-    set_irq_mask(0xff);
-
-    // zero out .bss section
-    for (uint32_t *dest = &_sbss; dest < &_ebss;) {
-        *dest++ = 0;
-    }
-
-    // switch to dual IO mode
-    reg_spictrl = (reg_spictrl & ~0x007F0000) | 0x00400000;
- 
-    // blink the user LED
-    uint32_t led_timer = 0;
-       
-    while (1) {
-        reg_leds = led_timer >> 16;
-        led_timer = led_timer + 1;
-    } 
-}
-*/
 
 void putchar(char c)
 {
@@ -122,11 +94,6 @@ char getchar_prompt(char *prompt)
 				print(prompt);
 			cycles_begin = cycles_now;
         }
-        anim_cycles = cycles_now - anim_cycles_begin;
-        if (animate && anim_cycles > 500000) {
-            anim_cycles_begin = cycles_now;
-            LEDRainbowWaveEffect();
-		}
 		c = reg_uart_data;
 	}
 
@@ -139,92 +106,14 @@ char getchar()
 }
 
 
-#ifndef BREAK2
-uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
-{
-	uint8_t data[256];
-	uint32_t *words = (void*)data;
-
-	uint32_t x32 = 314159265;
-
-	uint32_t cycles_begin, cycles_end;
-	uint32_t instns_begin, instns_end;
-	__asm__ volatile ("rdcycle %0" : "=r"(cycles_begin));
-	__asm__ volatile ("rdinstret %0" : "=r"(instns_begin));
-
-	for (int i = 0; i < 20; i++)
-	{
-		for (int k = 0; k < 256; k++)
-		{
-			x32 ^= x32 << 13;
-			x32 ^= x32 >> 17;
-			x32 ^= x32 << 5;
-			data[k] = x32;
-		}
-
-		for (int k = 0, p = 0; k < 256; k++)
-		{
-			if (data[k])
-				data[p++] = k;
-		}
-
-		for (int k = 0, p = 0; k < 64; k++)
-		{
-			x32 = x32 ^ words[k];
-		}
-	}
-
-	__asm__ volatile ("rdcycle %0" : "=r"(cycles_end));
-	__asm__ volatile ("rdinstret %0" : "=r"(instns_end));
-
-	if (verbose)
-	{
-		print("Cycles: 0x");
-		print_hex(cycles_end - cycles_begin, 8);
-		putchar('\n');
-
-		print("Instns: 0x");
-		print_hex(instns_end - instns_begin, 8);
-		putchar('\n');
-
-		print("Chksum: 0x");
-		print_hex(x32, 8);
-		putchar('\n');
-	}
-
-	if (instns_p)
-		*instns_p = instns_end - instns_begin;
-
-	return cycles_end - cycles_begin;
-}
-#endif
-
-
 void main()
 {
-    cRGB color;
-    color.r = 0;
-    color.g = 0;
-    color.b = 0;
-
-	reg_leds = 31;
-	reg_uart_clkdiv = 139;
+    reg_uart_clkdiv = 139;
+    reg_leds = 1;
 	print("Booting..\n");
-    
-    
-    #ifndef BREAK1
-    // animation fails as globals are not initialised
-    init_rainbow();
-    #endif
-
-    LEDRainbowWaveEffect();
-    
-	reg_leds = 63;
-	//set_flash_qspi_flag();
-
-	reg_leds = 127;
-	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
     reg_leds = 0;
+    
+	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
 
 
 	print("\n");
@@ -265,13 +154,8 @@ void main()
 		print("\n");
 		print("Select an action:\n");
 		print("\n");
-		print("   [1] Increment Red\n");
-		print("   [2] Increment Green\n");
-		print("   [3] Increment Blue\n");
-		print("   [4] Start animation\n");
-		print("   [5] Stop animation\n");
-		print("   [6] Increment led reg\n");
-		print("   [0] Set LEDs off\n");
+		print("   [1] LED on\n");
+		print("   [2] LED off\n");
 		print("\n");
 
 		for (int rep = 10; rep > 0; rep--)
@@ -285,31 +169,10 @@ void main()
 			switch (cmd)
 			{
 			case '1':
-                color.r ++;
-                set_ws2812(color,0);
+                reg_leds = 1;
                 break;
 			case '2':
-                color.g ++;
-                set_ws2812(color,0);
-                break;
-			case '3':
-                color.b ++;
-                set_ws2812(color,0);
-                break;
-            case '4':
-                animate = true;
-                break;
-            case '5':
-                animate = false;
-                break;
-            case '6':
-                reg_leds += 1;
-                break;
-            case '0':
-                color.r = 0;
-                color.g = 0;
-                color.b = 0;
-                set_ws2812(color,0);
+                reg_leds = 0;
                 break;
 			default:
 				continue;
