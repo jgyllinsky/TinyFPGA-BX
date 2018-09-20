@@ -2,9 +2,6 @@
 #include <stdbool.h>
 #include "animate.h"
 
-//#define BREAK1
-//#define BREAK2
-
 // a pointer to this is a null pointer, but the compiler does not
 // know that because "sram" is a linker symbol from sections.lds.
 extern uint32_t sram;
@@ -38,13 +35,6 @@ void main() {
     // switch to dual IO mode
     reg_spictrl = (reg_spictrl & ~0x007F0000) | 0x00400000;
  
-    // blink the user LED
-    uint32_t led_timer = 0;
-       
-    while (1) {
-        reg_leds = led_timer >> 16;
-        led_timer = led_timer + 1;
-    } 
 }
 */
 
@@ -139,92 +129,27 @@ char getchar()
 }
 
 
-#ifndef BREAK2
-uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
-{
-	uint8_t data[256];
-	uint32_t *words = (void*)data;
-
-	uint32_t x32 = 314159265;
-
-	uint32_t cycles_begin, cycles_end;
-	uint32_t instns_begin, instns_end;
-	__asm__ volatile ("rdcycle %0" : "=r"(cycles_begin));
-	__asm__ volatile ("rdinstret %0" : "=r"(instns_begin));
-
-	for (int i = 0; i < 20; i++)
-	{
-		for (int k = 0; k < 256; k++)
-		{
-			x32 ^= x32 << 13;
-			x32 ^= x32 >> 17;
-			x32 ^= x32 << 5;
-			data[k] = x32;
-		}
-
-		for (int k = 0, p = 0; k < 256; k++)
-		{
-			if (data[k])
-				data[p++] = k;
-		}
-
-		for (int k = 0, p = 0; k < 64; k++)
-		{
-			x32 = x32 ^ words[k];
-		}
-	}
-
-	__asm__ volatile ("rdcycle %0" : "=r"(cycles_end));
-	__asm__ volatile ("rdinstret %0" : "=r"(instns_end));
-
-	if (verbose)
-	{
-		print("Cycles: 0x");
-		print_hex(cycles_end - cycles_begin, 8);
-		putchar('\n');
-
-		print("Instns: 0x");
-		print_hex(instns_end - instns_begin, 8);
-		putchar('\n');
-
-		print("Chksum: 0x");
-		print_hex(x32, 8);
-		putchar('\n');
-	}
-
-	if (instns_p)
-		*instns_p = instns_end - instns_begin;
-
-	return cycles_end - cycles_begin;
-}
-#endif
-
-
 void main()
 {
-    cRGB color;
-    color.r = 0;
-    color.g = 0;
-    color.b = 0;
-
-	reg_leds = 31;
+    // correct divider for 16mhz clock 115200 baud
 	reg_uart_clkdiv = 139;
 	print("Booting..\n");
     
-    
-    #ifndef BREAK1
-    // animation fails as globals are not initialised
-    init_rainbow();
-    #endif
+    reg_leds = 1; // turn on led
 
-    LEDRainbowWaveEffect();
-    
-	reg_leds = 63;
-	//set_flash_qspi_flag();
+    cRGB color;
+    color.r = 0;
+    color.g = 40;
+    color.b = 0;
+    set_ws2812(color, 2); // this just to see in simulation
+    color.g = 0;
 
-	reg_leds = 127;
+    set_irq_mask(0xff);
+
+    // switch to dual IO mode
+    reg_spictrl = (reg_spictrl & ~0x007F0000) | 0x00400000;
+
 	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
-    reg_leds = 0;
 
 
 	print("\n");
@@ -265,13 +190,13 @@ void main()
 		print("\n");
 		print("Select an action:\n");
 		print("\n");
-		print("   [1] Increment Red\n");
-		print("   [2] Increment Green\n");
-		print("   [3] Increment Blue\n");
+		print("   [1] Increment LED 0 Red\n");
+		print("   [2] Increment LED 0 Green\n");
+		print("   [3] Increment LED 0 Blue\n");
 		print("   [4] Start animation\n");
 		print("   [5] Stop animation\n");
-		print("   [6] Increment led reg\n");
-		print("   [0] Set LEDs off\n");
+		print("   [6] Increment GPIO LED reg\n");
+		print("   [0] Set LED 0 off\n");
 		print("\n");
 
 		for (int rep = 10; rep > 0; rep--)
