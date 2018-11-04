@@ -7,7 +7,7 @@ sim: hx8kdemo_tb.vvp firmware.hex
 	gtkwave testbench.vcd soc.gtkw
 
 hx8kdemo_tb.vvp: hx8kdemo_tb.v hardware.v spimemio.v simpleuart.v picosoc.v picorv32.v spiflash.v ws2812.v
-	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v`
+	iverilog -s testbench -o $@ $^ /usr/local/share/yosys/ice40/cells_sim.v
 
 hardware.blif: hardware.v spimemio.v simpleuart.v picosoc.v picorv32.v ws2812.v
 	yosys -ql hardware.log -p 'synth_ice40 -top hardware -blif hardware.blif' $^
