@@ -129,6 +129,36 @@ module hardware (
 				if (iomem_wstrb[2]) led_rgb_data[15: 8] <= iomem_wdata[23:16];
 				if (iomem_wstrb[3]) led_rgb_data[23:16] <= iomem_wdata[31:24];
 			end
+		
+
+	    ///////////////////////////
+            // PUF IN Peripheral
+            ///////////////////////////
+		else if (iomem_valid && !iomem_ready && iomem_addr[31:24] == 8'h05) begin
+				iomem_ready <= 1;
+//                		led_write <= 1;
+				iomem_rdata <= 0;
+// 				if (iomem_wstrb[0]) led_num             <= iomem_wdata[ 7: 0];
+// 				if (iomem_wstrb[1]) led_rgb_data[ 7: 0] <= iomem_wdata[15: 8];
+// 				if (iomem_wstrb[2]) led_rgb_data[15: 8] <= iomem_wdata[23:16];
+// 				if (iomem_wstrb[3]) led_rgb_data[23:16] <= iomem_wdata[31:24];
+			end
+		
+	    ///////////////////////////
+            // PUF OUT Peripheral
+            ///////////////////////////
+		else if (iomem_valid && !iomem_ready && iomem_addr[31:24] == 8'h06) begin
+				iomem_ready <= 1;
+//                		led_write <= 1;
+				iomem_rdata <= 0;
+// 				if (iomem_wstrb[0]) led_num             <= iomem_wdata[ 7: 0];
+// 				if (iomem_wstrb[1]) led_rgb_data[ 7: 0] <= iomem_wdata[15: 8];
+// 				if (iomem_wstrb[2]) led_rgb_data[15: 8] <= iomem_wdata[23:16];
+// 				if (iomem_wstrb[3]) led_rgb_data[23:16] <= iomem_wdata[31:24];
+			end
+		
+		
+		
         end
     end
 
