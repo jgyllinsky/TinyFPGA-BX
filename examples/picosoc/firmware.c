@@ -128,9 +128,14 @@ void main()
     set_ws2812(color, 2); // this just to see in simulation
     color.g = 0;
 
-/*///////////// These were removed on commit 2d17db3c935110d21783097e9f0c5828ace5e30b , added back as comments for merge if non-sim
+/*///////////// These were removed on commit 2d17db3c935110d21783097e9f0c5828ace5e30b and 29fc73eb1ff4295e17a93779d055bde8b5ab2b19, added back as comments for merge if non-sim
 //     set_irq_mask(0xff);
-
+//    
+//	//zero out .bss section
+//     for (uint32_t *dest = &_sbss; dest < &_ebss;) {
+//         *dest++ = 0;
+//     }
+//
 //     // switch to dual IO mode
 //     reg_spictrl = (reg_spictrl & ~0x007F0000) | 0x00400000;
 //////////////////// */	
