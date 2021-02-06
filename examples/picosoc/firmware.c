@@ -128,6 +128,13 @@ void main()
     set_ws2812(color, 2); // this just to see in simulation
     color.g = 0;
 
+/*///////////// These were removed on commit 2d17db3c935110d21783097e9f0c5828ace5e30b , added back as comments for merge if non-sim
+//     set_irq_mask(0xff);
+
+//     // switch to dual IO mode
+//     reg_spictrl = (reg_spictrl & ~0x007F0000) | 0x00400000;
+//////////////////// */	
+	
 	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
 
 
